@@ -2,8 +2,8 @@
 
 ## Deployment of service
 
--   Main branch should auto. deploy to: **ponder.frankencoin.com**
--   Test Deployment deploy to: **ponder.test.frankencoin.com**
+-   Main branch should auto. deploy to: **ponder.zchf.app**
+-   Test Deployment deploy to: **ponder.test.zchf.app**
 
 ## Ponder needs .env.local
 

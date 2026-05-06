@@ -5,8 +5,8 @@
 This is a production blockchain indexer for the Frankencoin (ZCHF) decentralized stablecoin ecosystem, built on Ponder framework. It indexes events from **8 blockchain networks** (Ethereum mainnet + 7 L2s: Polygon, Arbitrum, Optimism, Base, Avalanche, Gnosis, Sonic) and exposes all data via a GraphQL API.
 
 **Deployment:**
-- Production: `ponder.frankencoin.com`
-- Test: `ponder.test.frankencoin.com`
+- Production: `ponder.zchf.app`
+- Test: `ponder.test.zchf.app`
 
 **Technology Stack:**
 - Framework: Ponder v0.11.2 (blockchain indexing framework)

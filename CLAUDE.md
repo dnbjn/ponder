@@ -103,8 +103,8 @@ The API (`src/api/index.ts`) uses Hono to serve a GraphQL endpoint with auto-gen
 
 ## Deployment
 
-- **Main branch**: Auto-deploys to ponder.frankencoin.com
-- **Test deployment**: ponder.test.frankencoin.com
+- **Main branch**: Auto-deploys to ponder.zchf.app
+- **Test deployment**: ponder.test.zchf.app
 
 ## Key Patterns
 
