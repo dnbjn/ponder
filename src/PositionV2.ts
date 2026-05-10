@@ -101,8 +101,15 @@ ponder.on('PositionV2:MintingUpdate', async ({ event, context }) => {
 		client.readContract({ abi: SavingsV2ABI, address: ADDRESS[mainnet.id].savingsV2, functionName: 'currentRatePPM' }),
 	]);
 
+	const collateralBalance = await client.readContract({
+		abi: context.contracts.ERC20.abi,
+		address: position.collateral,
+		functionName: 'balanceOf',
+		args: [positionAddress],
+	});
+
 	await context.db.update(MintingHubV2PositionV2, { position: normalizeAddress(positionAddress) }).set({
-		collateralBalance: collateral,
+		collateralBalance,
 		price,
 		minted,
 		availableForMinting,
@@ -115,7 +122,11 @@ ponder.on('PositionV2:MintingUpdate', async ({ event, context }) => {
 		.select()
 		.from(MintingHubV2PositionV2)
 		.where(
-			and(eq(MintingHubV2PositionV2.closed, false), eq(MintingHubV2PositionV2.denied, false), gt(MintingHubV2PositionV2.minted, 0n))
+			and(
+				eq(MintingHubV2PositionV2.closed, false),
+				eq(MintingHubV2PositionV2.denied, false),
+				gt(MintingHubV2PositionV2.minted, 0n)
+			)
 		);
 
 	let totalMinted = 0n;
@@ -148,7 +159,7 @@ ponder.on('PositionV2:MintingUpdate', async ({ event, context }) => {
 		normalizeAddress(position.owner),
 		normalizeAddress(positionAddress),
 		event.transaction.hash,
-		context.client
+		client
 	);
 
 	const annualInterestPPM = baseRatePPM + position.riskPremiumPPM;

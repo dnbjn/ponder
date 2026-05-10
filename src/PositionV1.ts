@@ -6,7 +6,6 @@ import {
 	MintingHubV1Status,
 	PositionAggregatesV1,
 } from 'ponder:schema';
-import { Address } from 'viem';
 import { and, eq, gt } from 'ponder';
 import { normalizeAddress } from './utils/format';
 
@@ -32,7 +31,40 @@ ponder.on('PositionV1:MintingUpdate', async ({ event, context }) => {
 		context.db.find(MintingHubV1PositionV1, { position: normalizeAddress(positionAddress) }),
 	]);
 
+	let missingPositionData: {
+		position: string;
+		owner: string;
+		original: string;
+		expiration: bigint;
+		annualInterestPPM: number;
+		reserveContribution: number;
+		collateral: string;
+		collateralName: string;
+		collateralSymbol: string;
+		collateralDecimals: number;
+	};
+
 	if (position) {
+		missingPositionData = {
+			position: position.position,
+			owner: position.owner,
+			original: position.original,
+			expiration: position.expiration,
+			annualInterestPPM: position.annualInterestPPM,
+			reserveContribution: position.reserveContribution,
+			collateral: position.collateral,
+			collateralName: position.collateralName,
+			collateralSymbol: position.collateralSymbol,
+			collateralDecimals: position.collateralDecimals,
+		};
+		const collateralBalance = await client.readContract({
+			abi: context.contracts.ERC20.abi,
+			address: normalizeAddress(missingPositionData.collateral),
+			functionName: 'balanceOf',
+			args: [positionAddress],
+		});
+
+
 		const limitForPosition = (collateral * price) / BigInt(10 ** position.zchfDecimals);
 		const availableForPosition = limitForPosition - minted;
 
@@ -41,7 +73,7 @@ ponder.on('PositionV1:MintingUpdate', async ({ event, context }) => {
 				position: normalizeAddress(positionAddress),
 			})
 			.set({
-				collateralBalance: collateral,
+				collateralBalance,
 				price,
 				minted,
 				limitForPosition,
@@ -49,8 +81,38 @@ ponder.on('PositionV1:MintingUpdate', async ({ event, context }) => {
 				availableForPosition,
 				availableForClones,
 				cooldown,
-				closed: collateral == 0n,
+				closed: collateralBalance === 0n,
 			});
+	}
+	// @dev: issue due to "wrong" event sequence within the smart contracts
+	else {
+		const [owner, original, expiration, annualInterestPPM, reserveContribution, collateralAddress] = await Promise.all([
+			client.readContract({ abi: context.contracts.PositionV1.abi, address: positionAddress, functionName: 'owner' }),
+			client.readContract({ abi: context.contracts.PositionV1.abi, address: positionAddress, functionName: 'original' }),
+			client.readContract({ abi: context.contracts.PositionV1.abi, address: positionAddress, functionName: 'expiration' }),
+			client.readContract({ abi: context.contracts.PositionV1.abi, address: positionAddress, functionName: 'annualInterestPPM' }),
+			client.readContract({ abi: context.contracts.PositionV1.abi, address: positionAddress, functionName: 'reserveContribution' }),
+			client.readContract({ abi: context.contracts.PositionV1.abi, address: positionAddress, functionName: 'collateral' }),
+		]);
+
+		const [collateralName, collateralSymbol, collateralDecimals] = await Promise.all([
+			client.readContract({ abi: context.contracts.ERC20.abi, address: collateralAddress, functionName: 'name' }),
+			client.readContract({ abi: context.contracts.ERC20.abi, address: collateralAddress, functionName: 'symbol' }),
+			client.readContract({ abi: context.contracts.ERC20.abi, address: collateralAddress, functionName: 'decimals' }),
+		]);
+
+		missingPositionData = {
+			position: positionAddress,
+			owner,
+			original,
+			expiration,
+			annualInterestPPM,
+			reserveContribution,
+			collateral: collateralAddress,
+			collateralName,
+			collateralSymbol,
+			collateralDecimals,
+		};
 	}
 
 	// Recalculate V1 aggregates for this chain
@@ -97,63 +159,6 @@ ponder.on('PositionV1:MintingUpdate', async ({ event, context }) => {
 		.onConflictDoUpdate((current) => ({
 			mintingUpdatesCounter: current.mintingUpdatesCounter + 1n,
 		}));
-
-	let missingPositionData: {
-		position: string;
-		owner: string;
-		original: string;
-		expiration: bigint;
-		annualInterestPPM: number;
-		reserveContribution: number;
-		collateral: string;
-		collateralName: string;
-		collateralSymbol: string;
-		collateralDecimals: number;
-	};
-
-	// @dev: issue due to "wrong" event sequence within the smart contracts
-	if (position === null) {
-		const [owner, original, expiration, annualInterestPPM, reserveContribution, collateralAddress] = await Promise.all([
-			client.readContract({ abi: context.contracts.PositionV1.abi, address: positionAddress, functionName: 'owner' }),
-			client.readContract({ abi: context.contracts.PositionV1.abi, address: positionAddress, functionName: 'original' }),
-			client.readContract({ abi: context.contracts.PositionV1.abi, address: positionAddress, functionName: 'expiration' }),
-			client.readContract({ abi: context.contracts.PositionV1.abi, address: positionAddress, functionName: 'annualInterestPPM' }),
-			client.readContract({ abi: context.contracts.PositionV1.abi, address: positionAddress, functionName: 'reserveContribution' }),
-			client.readContract({ abi: context.contracts.PositionV1.abi, address: positionAddress, functionName: 'collateral' }),
-		]);
-
-		const [collateralName, collateralSymbol, collateralDecimals] = await Promise.all([
-			client.readContract({ abi: context.contracts.ERC20.abi, address: collateralAddress, functionName: 'name' }),
-			client.readContract({ abi: context.contracts.ERC20.abi, address: collateralAddress, functionName: 'symbol' }),
-			client.readContract({ abi: context.contracts.ERC20.abi, address: collateralAddress, functionName: 'decimals' }),
-		]);
-
-		missingPositionData = {
-			position: positionAddress,
-			owner,
-			original,
-			expiration,
-			annualInterestPPM,
-			reserveContribution,
-			collateral: collateralAddress,
-			collateralName,
-			collateralSymbol,
-			collateralDecimals,
-		};
-	} else {
-		missingPositionData = {
-			position: position.position,
-			owner: position.owner,
-			original: position.original,
-			expiration: position.expiration,
-			annualInterestPPM: position.annualInterestPPM,
-			reserveContribution: position.reserveContribution,
-			collateral: position.collateral,
-			collateralName: position.collateralName,
-			collateralSymbol: position.collateralSymbol,
-			collateralDecimals: position.collateralDecimals,
-		};
-	}
 
 	const getFeeTimeframe = function (): number {
 		const OneMonth = 60 * 60 * 24 * 30;
