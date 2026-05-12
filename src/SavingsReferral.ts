@@ -1,4 +1,4 @@
-import { LeadrateABI, SavingsABI } from '@frankencoin/zchf';
+import { SavingsABI } from '@frankencoin/zchf';
 import { ponder } from 'ponder:registry';
 import {
 	CommonEcosystem,
@@ -10,6 +10,7 @@ import {
 } from 'ponder:schema';
 import { Address, zeroAddress } from 'viem';
 import { updateTransactionLog } from './lib/TransactionLog';
+import { getSavingsRatePPM } from './lib/SavingsRate';
 import { normalizeAddress } from './utils/format';
 
 /*
@@ -30,7 +31,7 @@ ponder.on('SavingsReferral:Saved', async ({ event, context }) => {
 	const account: Address = normalizeAddress(event.args.account);
 
 	const [ratePPM, [, , referrer, referrerFee]] = await Promise.all([
-		client.readContract({ abi: LeadrateABI, address: module, functionName: 'currentRatePPM' }),
+		getSavingsRatePPM({ client, db: context.db, chainId, module }),
 		client.readContract({ abi: SavingsABI, address: module, functionName: 'savings', args: [account] }),
 	]);
 
@@ -157,7 +158,7 @@ ponder.on('SavingsReferral:InterestCollected', async ({ event, context }) => {
 	const account: Address = normalizeAddress(event.args.account);
 
 	const [ratePPM, [, , referrer, referrerFee]] = await Promise.all([
-		client.readContract({ abi: LeadrateABI, address: module, functionName: 'currentRatePPM' }),
+		getSavingsRatePPM({ client, db: context.db, chainId, module }),
 		client.readContract({ abi: SavingsABI, address: module, functionName: 'savings', args: [account] }),
 	]);
 
@@ -270,7 +271,7 @@ ponder.on('SavingsReferral:Withdrawn', async ({ event, context }) => {
 	const account: Address = normalizeAddress(event.args.account);
 
 	const [ratePPM, [, , referrer, referrerFee]] = await Promise.all([
-		client.readContract({ abi: LeadrateABI, address: module, functionName: 'currentRatePPM' }),
+		getSavingsRatePPM({ client, db: context.db, chainId, module }),
 		client.readContract({ abi: SavingsABI, address: module, functionName: 'savings', args: [account] }),
 	]);
 

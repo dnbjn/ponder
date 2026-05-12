@@ -1,8 +1,8 @@
-import { LeadrateABI } from '@frankencoin/zchf';
 import { ponder } from 'ponder:registry';
 import { CommonEcosystem, SavingsActivity, SavingsMapping, SavingsStatus } from 'ponder:schema';
 import { Address } from 'viem';
 import { updateTransactionLog } from './lib/TransactionLog';
+import { getSavingsRatePPM } from './lib/SavingsRate';
 import { normalizeAddress } from './utils/format';
 
 /*
@@ -22,11 +22,7 @@ ponder.on('SavingsV2:Saved', async ({ event, context }) => {
 	const module = normalizeAddress(event.log.address);
 	const account: Address = normalizeAddress(event.args.account);
 
-	const ratePPM = await client.readContract({
-		abi: LeadrateABI,
-		address: module,
-		functionName: 'currentRatePPM',
-	});
+	const ratePPM = await getSavingsRatePPM({ client, db: context.db, chainId, module });
 
 	// update total saved
 	await context.db
@@ -131,11 +127,7 @@ ponder.on('SavingsV2:InterestCollected', async ({ event, context }) => {
 	const module = normalizeAddress(event.log.address);
 	const account: Address = normalizeAddress(event.args.account);
 
-	const ratePPM = await client.readContract({
-		abi: LeadrateABI,
-		address: module,
-		functionName: 'currentRatePPM',
-	});
+	const ratePPM = await getSavingsRatePPM({ client, db: context.db, chainId, module });
 
 	// update total interest collected
 	await context.db
@@ -207,11 +199,7 @@ ponder.on('SavingsV2:Withdrawn', async ({ event, context }) => {
 	const module = normalizeAddress(event.log.address);
 	const account: Address = normalizeAddress(event.args.account);
 
-	const ratePPM = await client.readContract({
-		abi: LeadrateABI,
-		address: module,
-		functionName: 'currentRatePPM',
-	});
+	const ratePPM = await getSavingsRatePPM({ client, db: context.db, chainId, module });
 
 	// update total withdrawn
 	await context.db

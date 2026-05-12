@@ -18,6 +18,21 @@ export const ERC20Status = onchainTable(
 	})
 );
 
+export const ERC20Metadata = onchainTable(
+	'ERC20Metadata',
+	(t) => ({
+		chainId: t.integer().notNull(),
+		token: t.hex().notNull(),
+		updated: t.bigint().notNull(),
+		name: t.text().notNull(),
+		symbol: t.text().notNull(),
+		decimals: t.integer().notNull(),
+	}),
+	(table) => ({
+		pk: primaryKey({ columns: [table.chainId, table.token] }),
+	})
+);
+
 // mint and burn indexing
 
 export const ERC20Mint = onchainTable(

@@ -8,6 +8,7 @@ import {
 	MintingHubV1Status,
 } from 'ponder:schema';
 import { Address } from 'viem';
+import { getERC20Metadata } from './lib/ERC20Metadata';
 import { normalizeAddress } from './utils/format';
 
 /*
@@ -27,6 +28,7 @@ ponder.on('MintingHubV1:PositionOpened', async ({ event, context }) => {
 	const { position, owner, zchf, collateral, price } = event.args;
 
 	const created: bigint = event.block.timestamp;
+	const chainId = context.chain.id;
 
 	const isOriginal: boolean = !event.transaction.input.includes('0x5cb47919');
 	const isClone: boolean = !isOriginal;
@@ -44,12 +46,8 @@ ponder.on('MintingHubV1:PositionOpened', async ({ event, context }) => {
 		start,
 		expiration,
 		challengePeriod,
-		zchfName,
-		zchfSymbol,
-		zchfDecimals,
-		collateralName,
-		collateralSymbol,
-		collateralDecimals,
+		zchfMetadata,
+		collateralMetadata,
 		collateralBalance,
 		// TODO: Keep in mind for developer, "limitForClones" is "limit" from SC
 		limitForClones,
@@ -64,18 +62,21 @@ ponder.on('MintingHubV1:PositionOpened', async ({ event, context }) => {
 		client.readContract({ abi: PositionV1ABI, address: position, functionName: 'start' }),
 		client.readContract({ abi: PositionV1ABI, address: position, functionName: 'expiration' }),
 		client.readContract({ abi: PositionV1ABI, address: position, functionName: 'challengePeriod' }),
-		client.readContract({ abi: ERC20ABI, address: zchf, functionName: 'name' }),
-		client.readContract({ abi: ERC20ABI, address: zchf, functionName: 'symbol' }),
-		client.readContract({ abi: ERC20ABI, address: zchf, functionName: 'decimals' }),
-		client.readContract({ abi: ERC20ABI, address: collateral, functionName: 'name' }),
-		client.readContract({ abi: ERC20ABI, address: collateral, functionName: 'symbol' }),
-		client.readContract({ abi: ERC20ABI, address: collateral, functionName: 'decimals' }),
+		getERC20Metadata({ client, db: context.db, chainId, token: zchf, timestamp: created }),
+		getERC20Metadata({ client, db: context.db, chainId, token: collateral, timestamp: created }),
 		client.readContract({ abi: ERC20ABI, address: collateral, functionName: 'balanceOf', args: [position] }),
 		client.readContract({ abi: PositionV1ABI, address: position, functionName: 'limit' }),
 		client.readContract({ abi: PositionV1ABI, address: position, functionName: 'limitForClones' }),
 		client.readContract({ abi: PositionV1ABI, address: position, functionName: 'minted' }),
 		client.readContract({ abi: PositionV1ABI, address: position, functionName: 'cooldown' }),
 	]);
+
+	const { name: zchfName, symbol: zchfSymbol, decimals: zchfDecimals } = zchfMetadata;
+	const {
+		name: collateralName,
+		symbol: collateralSymbol,
+		decimals: collateralDecimals,
+	} = collateralMetadata;
 
 	// ------------------------------------------------------------------
 	// CALC VALUES

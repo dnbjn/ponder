@@ -7,6 +7,7 @@ import {
 	MintingHubV2PositionV2,
 	MintingHubV2Status,
 } from 'ponder:schema';
+import { getERC20Metadata } from './lib/ERC20Metadata';
 import { normalizeAddress } from './utils/format';
 
 /*
@@ -29,6 +30,7 @@ ponder.on('MintingHubV2:PositionOpened', async ({ event, context }) => {
 	const parent = event.args.original;
 
 	const created: bigint = event.block.timestamp;
+	const chainId = context.chain.id;
 
 	const isOriginal: boolean = normalizeAddress(parent) === normalizeAddress(position);
 	const isClone: boolean = !isOriginal;
@@ -48,9 +50,7 @@ ponder.on('MintingHubV2:PositionOpened', async ({ event, context }) => {
 		expiration,
 		challengePeriod,
 		limitForClones,
-		collateralName,
-		collateralSymbol,
-		collateralDecimals,
+		collateralMetadata,
 		collateralBalance,
 		price,
 		availableForClones,
@@ -67,9 +67,7 @@ ponder.on('MintingHubV2:PositionOpened', async ({ event, context }) => {
 		client.readContract({ abi: PositionV2.abi, address: position, functionName: 'expiration' }),
 		client.readContract({ abi: PositionV2.abi, address: position, functionName: 'challengePeriod' }),
 		client.readContract({ abi: PositionV2.abi, address: position, functionName: 'limit' }),
-		client.readContract({ abi: ERC20ABI, address: collateral, functionName: 'name' }),
-		client.readContract({ abi: ERC20ABI, address: collateral, functionName: 'symbol' }),
-		client.readContract({ abi: ERC20ABI, address: collateral, functionName: 'decimals' }),
+		getERC20Metadata({ client, db: context.db, chainId, token: collateral, timestamp: created }),
 		client.readContract({ abi: ERC20ABI, address: collateral, functionName: 'balanceOf', args: [position] }),
 		client.readContract({ abi: PositionV2.abi, address: position, functionName: 'price' }),
 		client.readContract({ abi: PositionV2.abi, address: position, functionName: 'availableForClones' }),
@@ -80,11 +78,13 @@ ponder.on('MintingHubV2:PositionOpened', async ({ event, context }) => {
 
 	// ------------------------------------------------------------------
 	// ZCHF ERC20 (requires zchf address from above)
-	const [zchfName, zchfSymbol, zchfDecimals] = await Promise.all([
-		client.readContract({ abi: ERC20ABI, address: zchf, functionName: 'name' }),
-		client.readContract({ abi: ERC20ABI, address: zchf, functionName: 'symbol' }),
-		client.readContract({ abi: ERC20ABI, address: zchf, functionName: 'decimals' }),
-	]);
+	const zchfMetadata = await getERC20Metadata({ client, db: context.db, chainId, token: zchf, timestamp: created });
+	const { name: zchfName, symbol: zchfSymbol, decimals: zchfDecimals } = zchfMetadata;
+	const {
+		name: collateralName,
+		symbol: collateralSymbol,
+		decimals: collateralDecimals,
+	} = collateralMetadata;
 
 	// ------------------------------------------------------------------
 	// CALC VALUES
