@@ -1,10 +1,18 @@
-import { and, or, eq, gt, gte, inArray } from 'ponder';
+import { and, eq, gte, inArray } from 'ponder';
 import { type Context } from 'ponder:registry';
-import { AnalyticTransactionLog, AnalyticDailyLog, CommonEcosystem, PositionAggregatesV1, PositionAggregatesV2 } from 'ponder:schema';
+import {
+	AnalyticTransactionLog,
+	AnalyticDailyLog,
+	CommonEcosystem,
+	PositionAggregatesV1,
+	PositionAggregatesV2,
+	SavingsStatus,
+} from 'ponder:schema';
 import { EquityABI, FrankencoinABI, SavingsABI, SavingsV2ABI } from '@frankencoin/zchf';
-import { Address, parseEther, parseUnits } from 'viem';
+import { parseEther } from 'viem';
 import { addr, config } from '../../ponder.config';
 import { mainnet } from 'viem/chains';
+import { normalizeAddress } from '../utils/format';
 
 // Time constants for efficient date calculations using BigInt arithmetic
 const ONE_DAY_SECONDS = 86400n;
@@ -62,30 +70,54 @@ export async function updateTransactionLog({ client, db, chainId, blockNumber, t
 	const mintHubV2Started = blockNumber >= BigInt(config[mainnet.id].startMintingHubV2);
 	const savingsReferalStarted = blockNumber >= BigInt(config[mainnet.id].startSavingsReferal);
 
-	// Fetch all on-chain reads and db lookups in parallel
-	const [totalSupply, totalEquity, fpsTotalSupply, fpsPrice, mintRatePPM, saveRatePPM, v1Agg, v2Agg] = await Promise.all([
+	const mintModule = normalizeAddress(mainnetAddress.savingsV2);
+	const saveModule = normalizeAddress(mainnetAddress.savingsReferral);
+
+	// Fetch live values whose same-transaction ordering matters, and use indexed DB state for stable rates.
+	const [
+		totalSupply,
+		totalEquity,
+		fpsTotalSupply,
+		fpsPrice,
+		savingsStatuses,
+		v1Agg,
+		v2Agg,
+	] = await Promise.all([
 		client.readContract({ abi: FrankencoinABI, address: mainnetAddress.frankencoin, functionName: 'totalSupply' }),
 		client.readContract({ abi: FrankencoinABI, address: mainnetAddress.frankencoin, functionName: 'equity' }),
 		client.readContract({ abi: EquityABI, address: mainnetAddress.equity, functionName: 'totalSupply' }),
 		client.readContract({ abi: EquityABI, address: mainnetAddress.equity, functionName: 'price' }),
-		// Fetch mint lead rate from SavingsV2 (deployed at startMintingHubV2)
-		mintHubV2Started
-			? client.readContract({ abi: SavingsV2ABI, address: mainnetAddress.savingsV2, functionName: 'currentRatePPM' })
-			: Promise.resolve(0n),
-		// Fetch save lead rate from SavingsReferral (deployed at startSavingsReferal)
-		savingsReferalStarted
-			? client.readContract({ abi: SavingsABI, address: mainnetAddress.savingsReferral, functionName: 'currentRatePPM' })
-			: Promise.resolve(0n),
+		db.sql
+			.select()
+			.from(SavingsStatus)
+			.where(and(eq(SavingsStatus.chainId, chainId), inArray(SavingsStatus.module, [mintModule, saveModule]))),
 		// Read V1 aggregates (O(1) instead of O(n))
 		db.find(PositionAggregatesV1, { chainId }),
 		// Read V2 aggregates (O(1) instead of O(n))
 		db.find(PositionAggregatesV2, { chainId }),
 	]);
 
-	// Fetch both mint lead rate (for V2 positions) and save lead rate (for savings)
-	const currentMintLeadRate: bigint = BigInt(mintRatePPM);
+	const savingsStatusByModule = new Map(savingsStatuses.map((status) => [normalizeAddress(status.module), status]));
+
+	// Fetch both mint lead rate (for V2 positions) and save lead rate (for savings) from indexed RateChanged state.
+	const indexedMintLeadRate = savingsStatusByModule.get(mintModule)?.rate;
+	const indexedSaveLeadRate = savingsStatusByModule.get(saveModule)?.rate;
+	const [mintRateFallback, saveRateFallback] = await Promise.all([
+		mintHubV2Started && indexedMintLeadRate === undefined
+			? client.readContract({ abi: SavingsV2ABI, address: mainnetAddress.savingsV2, functionName: 'currentRatePPM' })
+			: Promise.resolve(0n),
+		savingsReferalStarted && indexedSaveLeadRate === undefined
+			? client.readContract({ abi: SavingsABI, address: mainnetAddress.savingsReferral, functionName: 'currentRatePPM' })
+			: Promise.resolve(0n),
+	]);
+
+	const currentMintLeadRate: bigint = mintHubV2Started
+		? BigInt(indexedMintLeadRate ?? mintRateFallback)
+		: 0n;
 	// Fallback: if SavingsReferral not yet deployed, use mint rate
-	const currentSaveLeadRate: bigint = savingsReferalStarted ? BigInt(saveRatePPM) : currentMintLeadRate;
+	const currentSaveLeadRate: bigint = savingsReferalStarted
+		? BigInt(indexedSaveLeadRate ?? saveRateFallback)
+		: currentMintLeadRate;
 
 	const totalMintedV1 = v1Agg?.totalMinted ?? 0n;
 	const annualV1Interests = v1Agg?.annualInterests ?? 0n;
