@@ -126,13 +126,6 @@ export default createConfig({
 			ethGetLogsBlockRange: config[polygon.id].ethGetLogsBlockRange,
 			rpc: http(config[polygon.id].rpc),
 		},
-		[arbitrum.name]: {
-			id: arbitrum.id,
-			maxRequestsPerSecond: config[arbitrum.id].maxRequestsPerSecond,
-			pollingInterval: config[arbitrum.id].pollingInterval,
-			ethGetLogsBlockRange: config[arbitrum.id].ethGetLogsBlockRange,
-			rpc: http(config[arbitrum.id].rpc),
-		},
 		[optimism.name]: {
 			id: optimism.id,
 			maxRequestsPerSecond: config[optimism.id].maxRequestsPerSecond,
@@ -182,10 +175,6 @@ export default createConfig({
 				[polygon.name]: {
 					address: addr[polygon.id].ccipBridgedFrankencoin,
 					startBlock: config[polygon.id].startBridgedFrankencoin,
-				},
-				[arbitrum.name]: {
-					address: addr[arbitrum.id].ccipBridgedFrankencoin,
-					startBlock: config[arbitrum.id].startBridgedFrankencoin,
 				},
 				[optimism.name]: {
 					address: addr[optimism.id].ccipBridgedFrankencoin,
@@ -278,10 +267,6 @@ export default createConfig({
 					address: [addr[polygon.id].ccipBridgedSavings],
 					startBlock: config[polygon.id].startBridgedFrankencoin,
 				},
-				[arbitrum.name]: {
-					address: [addr[arbitrum.id].ccipBridgedSavings],
-					startBlock: config[arbitrum.id].startBridgedFrankencoin,
-				},
 				[optimism.name]: {
 					address: [addr[optimism.id].ccipBridgedSavings],
 					startBlock: config[optimism.id].startBridgedFrankencoin,
@@ -315,10 +300,6 @@ export default createConfig({
 				[polygon.name]: {
 					address: [addr[polygon.id].ccipBridgedSavings],
 					startBlock: config[polygon.id].startSavingsReferal,
-				},
-				[arbitrum.name]: {
-					address: [addr[arbitrum.id].ccipBridgedSavings],
-					startBlock: config[arbitrum.id].startSavingsReferal,
 				},
 				[optimism.name]: {
 					address: [addr[optimism.id].ccipBridgedSavings],
@@ -360,10 +341,6 @@ export default createConfig({
 				[polygon.name]: {
 					address: [addr[polygon.id].ccipBridgedFrankencoin],
 					startBlock: config[polygon.id].startBridgedFrankencoin,
-				},
-				[arbitrum.name]: {
-					address: [addr[arbitrum.id].ccipBridgedFrankencoin],
-					startBlock: config[arbitrum.id].startBridgedFrankencoin,
 				},
 				[optimism.name]: {
 					address: [addr[optimism.id].ccipBridgedFrankencoin],
@@ -407,10 +384,6 @@ export default createConfig({
 				[polygon.name]: {
 					address: [addr[polygon.id].ccipBridgedFrankencoin],
 					startBlock: config[polygon.id].startBridgedFrankencoin,
-				},
-				[arbitrum.name]: {
-					address: [addr[arbitrum.id].ccipBridgedFrankencoin],
-					startBlock: config[arbitrum.id].startBridgedFrankencoin,
 				},
 				[optimism.name]: {
 					address: [addr[optimism.id].ccipBridgedFrankencoin],
