@@ -154,13 +154,6 @@ export default createConfig({
 			ethGetLogsBlockRange: config[gnosis.id].ethGetLogsBlockRange,
 			rpc: http(config[gnosis.id].rpc),
 		},
-		[sonic.name]: {
-			id: sonic.id,
-			maxRequestsPerSecond: config[sonic.id].maxRequestsPerSecond,
-			pollingInterval: config[sonic.id].pollingInterval,
-			ethGetLogsBlockRange: config[sonic.id].ethGetLogsBlockRange,
-			rpc: http(config[sonic.id].rpc),
-		},
 	},
 	contracts: {
 		// ### NATIVE CONTRACT ###
@@ -191,10 +184,6 @@ export default createConfig({
 				[gnosis.name]: {
 					address: addr[gnosis.id].ccipBridgedFrankencoin,
 					startBlock: config[gnosis.id].startBridgedFrankencoin,
-				},
-				[sonic.name]: {
-					address: addr[sonic.id].ccipBridgedFrankencoin,
-					startBlock: config[sonic.id].startBridgedFrankencoin,
 				},
 			},
 		},
@@ -283,10 +272,6 @@ export default createConfig({
 					address: [addr[gnosis.id].ccipBridgedSavings],
 					startBlock: config[gnosis.id].startBridgedFrankencoin,
 				},
-				[sonic.name]: {
-					address: [addr[sonic.id].ccipBridgedSavings],
-					startBlock: config[sonic.id].startBridgedFrankencoin,
-				},
 			},
 		},
 		SavingsReferral: {
@@ -316,10 +301,6 @@ export default createConfig({
 				[gnosis.name]: {
 					address: [addr[gnosis.id].ccipBridgedSavings],
 					startBlock: config[gnosis.id].startSavingsReferal,
-				},
-				[sonic.name]: {
-					address: [addr[sonic.id].ccipBridgedSavings],
-					startBlock: config[sonic.id].startSavingsReferal,
 				},
 			},
 		},
@@ -357,10 +338,6 @@ export default createConfig({
 				[gnosis.name]: {
 					address: [addr[gnosis.id].ccipBridgedFrankencoin],
 					startBlock: config[gnosis.id].startBridgedFrankencoin,
-				},
-				[sonic.name]: {
-					address: [addr[sonic.id].ccipBridgedFrankencoin],
-					startBlock: config[sonic.id].startBridgedFrankencoin,
 				},
 			},
 		},
@@ -400,10 +377,6 @@ export default createConfig({
 				[gnosis.name]: {
 					address: [addr[gnosis.id].ccipBridgedFrankencoin],
 					startBlock: config[gnosis.id].startBridgedFrankencoin,
-				},
-				[sonic.name]: {
-					address: [addr[sonic.id].ccipBridgedFrankencoin],
-					startBlock: config[sonic.id].startBridgedFrankencoin,
 				},
 			},
 		},
