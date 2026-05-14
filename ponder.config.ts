@@ -24,9 +24,13 @@ export const addr = ADDRESS;
 export const config = {
 	// core deployment
 	[mainnet.id]: {
-		// Mainnet stays on Alchemy only: heaviest chain, factory-discovered positions,
-		// deepest backfill — archive reliability matters most here.
-		rpc: [`https://eth-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_RPC_KEY}`],
+		// Mainnet stays Alchemy-primary: heaviest chain, factory-discovered positions,
+		// deepest backfill — archive reliability matters most here. dRPC is a keyless
+		// archive-grade fallback.
+		rpc: [
+			`https://eth-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_RPC_KEY}`,
+			'https://eth.drpc.org',
+		],
 		maxRequestsPerSecond: parseInt(process.env.MAX_REQUESTS_PER_SECOND || '10'),
 		pollingInterval: parseInt(process.env.POLLING_INTERVAL_MS || '30000'),
 		ethGetLogsBlockRange: 500, // ~12s blocks
@@ -40,11 +44,12 @@ export const config = {
 	},
 
 	// multichain support
-	// L2s use a keyless public RPC (PublicNode) as primary with Alchemy as fallback,
-	// to keep these lightweight workloads off the Alchemy CU budget.
+	// L2s use keyless public RPCs (PublicNode primary, dRPC secondary) with Alchemy as
+	// last-resort fallback, to keep these lightweight workloads off the Alchemy CU budget.
 	[polygon.id]: {
 		rpc: [
 			'https://polygon-bor-rpc.publicnode.com',
+			'https://polygon.drpc.org',
 			`https://polygon-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_RPC_KEY}`,
 		],
 		maxRequestsPerSecond: parseInt(process.env.MAX_REQUESTS_PER_SECOND || '10'),
@@ -56,6 +61,7 @@ export const config = {
 	[arbitrum.id]: {
 		rpc: [
 			'https://arbitrum-one-rpc.publicnode.com',
+			'https://arbitrum.drpc.org',
 			`https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_RPC_KEY}`,
 		],
 		maxRequestsPerSecond: parseInt(process.env.MAX_REQUESTS_PER_SECOND || '10'),
@@ -67,6 +73,7 @@ export const config = {
 	[optimism.id]: {
 		rpc: [
 			'https://optimism-rpc.publicnode.com',
+			'https://optimism.drpc.org',
 			`https://opt-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_RPC_KEY}`,
 		],
 		maxRequestsPerSecond: parseInt(process.env.MAX_REQUESTS_PER_SECOND || '10'),
@@ -78,6 +85,7 @@ export const config = {
 	[base.id]: {
 		rpc: [
 			'https://base-rpc.publicnode.com',
+			'https://base.drpc.org',
 			`https://base-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_RPC_KEY}`,
 		],
 		maxRequestsPerSecond: parseInt(process.env.MAX_REQUESTS_PER_SECOND || '10'),
@@ -89,6 +97,7 @@ export const config = {
 	[avalanche.id]: {
 		rpc: [
 			'https://avalanche-c-chain-rpc.publicnode.com',
+			'https://avalanche.drpc.org',
 			`https://avax-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_RPC_KEY}`,
 		],
 		maxRequestsPerSecond: parseInt(process.env.MAX_REQUESTS_PER_SECOND || '10'),
@@ -100,6 +109,7 @@ export const config = {
 	[gnosis.id]: {
 		rpc: [
 			'https://gnosis-rpc.publicnode.com',
+			'https://gnosis.drpc.org',
 			`https://gnosis-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_RPC_KEY}`,
 		],
 		maxRequestsPerSecond: parseInt(process.env.MAX_REQUESTS_PER_SECOND || '10'),
@@ -111,6 +121,7 @@ export const config = {
 	[sonic.id]: {
 		rpc: [
 			'https://sonic-rpc.publicnode.com',
+			'https://sonic.drpc.org',
 			`https://sonic-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_RPC_KEY}`,
 		],
 		maxRequestsPerSecond: parseInt(process.env.MAX_REQUESTS_PER_SECOND || '10'),

@@ -47,7 +47,7 @@ The indexer supports a native chain (Ethereum mainnet) and multiple bridged chai
 - **Native contracts** (mainnet only): Frankencoin core, Equity, MintingHub V1/V2, Position V1/V2, Savings, RollerV2
 - **Bridged contracts** (all chains): CCIP bridged Frankencoin, bridged Savings, Transfer Reference
 - **Chain configs** exported via `config` object with RPC URLs, rate limits, and start blocks per chain
-- **RPC routing**: each chain's `rpc` is an array of endpoint URLs. Ethereum mainnet uses Alchemy only; the L2 chains use a keyless public RPC (PublicNode) as primary with Alchemy as fallback, keeping their lightweight workloads off the Alchemy CU budget
+- **RPC routing**: each chain's `rpc` is a `fallback()` of endpoint URLs tried in order. Ethereum mainnet is Alchemy-primary with dRPC as fallback; the L2 chains use keyless public RPCs (PublicNode primary, dRPC secondary) with Alchemy as last-resort fallback, keeping their lightweight workloads off the Alchemy CU budget
 
 Contract addresses and ABIs are imported from `@frankencoin/zchf` package via `ADDRESS` and various ABI exports.
 
